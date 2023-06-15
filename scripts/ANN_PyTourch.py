@@ -194,7 +194,7 @@ def init_weights(m):
 # ## PCC
 
 # %%
-def pcc(pred, targ):
+def pearson(pred, targ):
     p = pred - pred.mean()
     t = targ - targ.mean()
     s = p.mul(t).sum()
@@ -234,38 +234,32 @@ def train():
         loss = criterion(pred, y_valid)  
         valid_loss.append(loss.data)
         mse = torch.mean(error(pred.detach(), y_valid.detach()))
+        pcc = pearson(pred.detach(), y_valid.detach())
 
         if invoke(early_stopping, valid_loss[-1], net, implement=True):
             net.load_state_dict(torch.load('checkpoint.pt'))
             break
             
-    return net, train_loss, valid_loss, mse
+    return net, train_loss, valid_loss, mse, pcc
 
 # %%
 EPOCHS = 3000
 MINI_BATCH_SIZE = 512
 N_HIDDEN_NEURONS = 6
 LEARNING_RATE = 0.05
-PATIENCE = EPOCHS // 10
-best_mcc = 0
-best_pcc = 0
-best_mse = 1
-
+PATIENCE = EPOCHS // 10    
         
-        
-
-
 net = Net(n_features, N_HIDDEN_NEURONS)
-
 
 optimizer = optim.SGD(net.parameters(), lr=LEARNING_RATE)
 criterion = nn.MSELoss()
 
-
-net, train_loss, valid_loss, mse = train()
+net, train_loss, valid_loss, mse, pcc = train()
 
 mse = mse.item()
+pcc = pcc.item()
 print(mse)
+print(pcc)
 
 # %%
 
