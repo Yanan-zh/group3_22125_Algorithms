@@ -102,16 +102,20 @@ for mhc in mhc_list:
             train_data = np.concatenate(train_data, axis = 0)
 
             test_mse_list = []
-            lamda_optimal = 0 
+            beta_optimal = 0 
             eval_mse = []
             for number in range(len(beta_values)):
             
                 print("\t\t\tTraining PSSM ...")
-                lamb, test_mse, weights = PSSM_new.PSSM_train(train_data, beta_values[number])[1]
-                test_mse_list.append(test_mse)
+                weight = PSSM_new.PSSM_train(train_data, beta_values[number])
                 PSSM_matrices.append(weights)
+                 
+                pred = evaluate(test_data, weight)
+                targets = np.array(test_data[:, 1], dtype=float)
+                error = mse(targets,pred)
+            	eval_mse.append(error)
             
-            lamda_optimal = beta_values[np.argmin(eval_mse)]
+            beta_optimal = beta_values[np.argmin(eval_mse)]
             
             PSSM_matrices_optimal = PSSM_matrices[np.argmin(eval_mse)]
             
