@@ -3,6 +3,7 @@ import torch
 import math
 from torch.autograd import Variable
 import torch.nn as nn
+#import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
 
@@ -14,7 +15,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc, matthews_corrcoef
-from torchmetrics import PearsonCorrCoef
+from torchmetrics import PearsonCorrCoef, MeanSquaredError
 from torchmetrics.functional import pearson_corrcoef
 from scipy.stats import pearsonr
 
@@ -91,12 +92,10 @@ BINDER_THRESHOLD = 0.426
 blosum_file = "/Users/einar/Documents/algo/data/Matrices/BLOSUM62"
 train_data = "/Users/einar/Documents/algo/data/SMM/A0201/f000"
 valid_data = "/Users/einar/Documents/algo/data/SMM/A0201/c000"
-test_data  = "/Users/einar/Documents/algo/data/SMM/A0201/c000"
 
 # %%
 train_raw = load_peptide_target(train_data)
 valid_raw = load_peptide_target(valid_data)
-test_raw = load_peptide_target(test_data)
 
 # %% [markdown]
 # ### Visualize Data
@@ -131,7 +130,6 @@ def plot_peptide_distribution(raw_data, raw_set):
 # %%
 x_train_, y_train_ = encode_peptides(train_raw)
 x_valid_, y_valid_ = encode_peptides(valid_raw)
-x_test_, y_test_ = encode_peptides(test_raw)
 
 # %% [markdown]
 # Check the data dimensions for the train set and validation set (batch_size, MAX_PEP_SEQ_LEN, n_features)
@@ -139,7 +137,6 @@ x_test_, y_test_ = encode_peptides(test_raw)
 # %%
 print(x_train_.shape)
 print(x_valid_.shape)
-print(x_test_.shape)
 
 # %% [markdown]
 # ### Flatten tensors
@@ -147,7 +144,6 @@ print(x_test_.shape)
 # %%
 x_train_ = x_train_.reshape(x_train_.shape[0], -1)
 x_valid_ = x_valid_.reshape(x_valid_.shape[0], -1)
-x_test_ = x_test_.reshape(x_test_.shape[0], -1)
 
 # %%
 batch_size = x_train_.shape[0]
@@ -163,8 +159,6 @@ y_train = Variable(torch.from_numpy(y_train_.astype('float32'))).view(-1, 1)
 x_valid = Variable(torch.from_numpy(x_valid_.astype('float32')))
 y_valid = Variable(torch.from_numpy(y_valid_.astype('float32'))).view(-1, 1)
 
-x_test = Variable(torch.from_numpy(x_test_.astype('float32')))
-y_test = Variable(torch.from_numpy(y_test_.astype('float32'))).view(-1, 1)
 
 # %% [markdown]
 # ## Build Model
@@ -197,7 +191,7 @@ def init_weights(m):
     """
     if isinstance(m, nn.Linear):
         nn.init.xavier_uniform_(m.weight)
-        m.bias.data.fill_(0.01) # nn.init.constant_(m.bias, 0)
+        m.bias.data.fill_(0.1) # nn.init.constant_(m.bias, 0)
 
 # %% [markdown]
 # ## PCC
@@ -210,6 +204,10 @@ def pcc(pred, targ):
     s1 = p.mul(p).sum().sqrt()
     s2 = t.mul(t).sum().sqrt()
     return s / ( s1 * s2)
+
+# %%
+def error(y, y_pred):
+    return 0.5*(y_pred - y)**2
 
 # %% [markdown]
 # ## Train Model
@@ -238,88 +236,39 @@ def train():
         pred = net(x_valid)
         loss = criterion(pred, y_valid)  
         valid_loss.append(loss.data)
+        mse = torch.mean(error(pred.detach(), y_valid.detach()))
 
         if invoke(early_stopping, valid_loss[-1], net, implement=True):
             net.load_state_dict(torch.load('checkpoint.pt'))
             break
             
-    return net, train_loss, valid_loss
+    return net, train_loss, valid_loss, mse
 
 # %%
 EPOCHS = 3000
 MINI_BATCH_SIZE = 512
-N_HIDDEN_NEURONS_param = [2, 4, 6, 16, 64]
-LEARNING_RATE_param = [0.1, 0.05, 0.01, 0.005]
+N_HIDDEN_NEURONS = 6
+LEARNING_RATE = 0.05
 PATIENCE = EPOCHS // 10
 best_mcc = 0
 best_pcc = 0
+best_mse = 1
 
-for i in range(5):
-
-    for j in range (4):
         
         
-        N_HIDDEN_NEURONS = N_HIDDEN_NEURONS_param[i]
-        LEARNING_RATE = LEARNING_RATE_param [j]
-
-        net = Net(n_features, N_HIDDEN_NEURONS)
-        #net.apply(init_weights)
-
-        optimizer = optim.SGD(net.parameters(), lr=LEARNING_RATE)
-        criterion = nn.MSELoss()
 
 
-        net, train_loss, valid_loss = train()
+net = Net(n_features, N_HIDDEN_NEURONS)
 
-        net.eval()
-        pred = net(x_test)
-        loss = criterion(pred, y_test)
 
-        print(y_test)
-        print(pred)
-        
-        y_test_class = np.where(y_test.flatten() >= BINDER_THRESHOLD, 1, 0)
-        y_pred_class = np.where(pred.flatten() >= BINDER_THRESHOLD, 1, 0)
-        
-        mcc = matthews_corrcoef(y_test_class, y_pred_class)
-        eval_pcc = pcc(pred.detach(), y_test.detach())
-        #eval_perf.append(eval_pcc)
-        
-        if mcc > best_mcc: 
-            best_mcc = mcc
+optimizer = optim.SGD(net.parameters(), lr=LEARNING_RATE)
+criterion = nn.MSELoss()
 
-        if eval_pcc > best_pcc:
-            best_pcc = eval_pcc
 
-# %%
-print("Best PCC:", best_pcc, "Best MCC:", best_mcc)
+net, train_loss, valid_loss, mse = train()
 
-# %% [markdown]
-# ## Evaluation
-
-# %% [markdown]
-# ### Predict on test set
-
-# %% [markdown]
-# ### Transform targets to class
-
-# %% [markdown]
-# ### Receiver Operating Caracteristic (ROC) curve
-
-# %% [markdown]
-# ### Matthew's Correlation Coefficient (MCC)
-
-# %%
-def plot_mcc():
-    plt.title('Matthews Correlation Coefficient')
-    plt.scatter(y_test.flatten().detach().numpy(), pred.flatten().detach().numpy(), label = 'MCC = %0.2f' % best_mcc)
-    plt.legend(loc = 'lower right')
-    plt.ylabel('Predicted')
-    plt.xlabel('Validation targets')
-    plt.show()
-
-plot_mcc()
-print(best_pcc)
+mse = mse.item()
+print(mse)
 
 # %%
 
