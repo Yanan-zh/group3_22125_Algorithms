@@ -8,15 +8,15 @@ from pprint import pprint
 # the input of the function should be a list contains all peptides for certain Gene
 # the output is the PSSM of the certain sequence matrix
 
-def PSSM(f_data,beta):
+def PSSM_train(f_data,beta):
     (peptides, peptide_length) = ('', 9)
     # load the Alphabet
-    dir_path = r'C:\Users\刘彧\Documents\GitHub\group3_22125_Algorithms'
-    alphabet_file = dir_path + "\\Matrices\\alphabet"
+    dir_path = '/mnt/c/Users/刘彧/Documents/GitHub/group3_22125_Algorithms/'
+    alphabet_file = dir_path + "/Matrices/alphabet"
     alphabet = np.loadtxt(alphabet_file, dtype=str)
 
     # load the background frequency
-    bg_file = dir_path + "\Matrices\\bg.freq.fmt"
+    bg_file = dir_path + "/Matrices/bg.freq.fmt"
     _bg = np.loadtxt(bg_file, dtype=float)
 
     bg = {}
@@ -24,7 +24,7 @@ def PSSM(f_data,beta):
         bg[alphabet[i]] = _bg[i]
 
     # load the blosum62 matrix
-    blosum62_file = dir_path + "\Matrices\\blosum62.freq_rownorm"
+    blosum62_file = dir_path + "/Matrices/blosum62.freq_rownorm"
     _blosum62 = np.loadtxt(blosum62_file, dtype=float).T
 
     blosum62 = {}
@@ -114,23 +114,27 @@ def PSSM(f_data,beta):
 
     return w_matrix
 
+
+
+
+
 # test
 
-dir_path = r'C:\Users\刘彧\Documents\GitHub\group3_22125_Algorithms'
-os.chdir(dir_path)
-folder = os.getcwd()
-datafile_names = os.listdir(dir_path + '\data') # make all the gene names in one list
-
-# print(datafile_names)
-test = []
-for genes in datafile_names:
-    test= []
-    for i in range(0,5):
-        f_data = np.loadtxt(dir_path + '\data\\'+ genes + '\\f00' + str(i), dtype=str).tolist()
-        for j in f_data:
-
-            test.append(j)
-
-print(test)
-a = PSSM(test,50)
-print(a)
+# dir_path = '/mnt/c/Users/刘彧/Documents/GitHub/group3_22125_Algorithms/'
+# os.chdir(dir_path)
+# folder = os.getcwd()
+# datafile_names = os.listdir(dir_path + '/data') # make all the gene names in one list
+#
+# # print(datafile_names)
+# test = []
+# for genes in datafile_names:
+#     test= []
+#     for i in range(0,5):
+#         f_data = np.loadtxt(dir_path + '/data/'+ genes + '/f00' + str(i), dtype=str).tolist()
+#         for j in f_data:
+#
+#             test.append(j)
+#
+# print(test)
+# a = PSSM_train(test,50)
+# print(a)

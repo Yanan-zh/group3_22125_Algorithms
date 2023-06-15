@@ -6,9 +6,8 @@ import os
 import time
 import math
 
-import ANN
-import PSSM
-import PSSM
+#import ANN
+import PSSM_new
 
 start = time.time()
 
@@ -60,7 +59,7 @@ ANN_errors = []
 beta_values = np.array([0, 50, 100, 150, 200, 250, 300])
 
 
-for mhc in mhc_list[0]:
+for mhc in mhc_list:
 
     mhc_start = time.time()
 
@@ -71,6 +70,7 @@ for mhc in mhc_list[0]:
 
     for i in range(5):
         filename = mhc_dir+mhc+"/c00" + str(i)
+        print(filename)
         dataset.append(np.loadtxt(filename, dtype = str))
         np.random.shuffle(dataset[i])
         dataset[i][:,2] = dataset[i][:,1].astype(float) > binder_threshold
@@ -80,7 +80,6 @@ for mhc in mhc_list[0]:
 
     prediction_PSSM = [None, None, None, None, None]
     evaluation_PSSM = [None, None, None, None]
-    beta_values = np.array([0,10**(-3),10**(-2)10**(-2),5*10**(-2),10**(-1),5*10**(-1),5,10,5*10,10**2,10**4])
 
     for outer_index in range(5) :
 
@@ -104,11 +103,11 @@ for mhc in mhc_list[0]:
 
             test_mse_list = []
             lamda_optimal = 0 
-            
+            eval_mse = []
             for number in range(len(beta_values)):
             
                 print("\t\t\tTraining PSSM ...")
-                lamb, test_mse, weights = PSSM.train(train_data, test_data, beta_values[number])[1]
+                lamb, test_mse, weights = PSSM_new.PSSM_train(train_data, beta_values[number])[1]
                 test_mse_list.append(test_mse)
                 PSSM_matrices.append(weights)
             
