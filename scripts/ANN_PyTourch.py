@@ -15,9 +15,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc, matthews_corrcoef
-from torchmetrics import PearsonCorrCoef, MeanSquaredError
-from torchmetrics.functional import pearson_corrcoef
-from scipy.stats import pearsonr
 
 # %%
 SEED=1
