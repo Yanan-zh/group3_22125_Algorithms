@@ -84,7 +84,7 @@ for mhc in mhc_list[0]:
             SMM_matrices_optimal = SMM_matrices[np.argmin(eval_mse)]
             
             evaluation_SMM[inner_index] = np.array(SMM.evaluate(evaluation_data, SMM_matrices_optimal)).reshape(-1,1)
-        
+    
         prediction_SMM[outer_index] = np.mean(np.concatenate(evaluation_SMM, axis = 1), axis = 1)
     
     predictions_SMM = np.concatenate(prediction_SMM, axis = 0).reshape(-1,1)
