@@ -108,21 +108,22 @@ for mhc in mhc_list:
             
                 print("\t\t\tTraining PSSM ...")
                 weight = PSSM_new.PSSM_train(train_data, beta_values[number])
-                PSSM_matrices.append(weights)
+                PSSM_matrices.append(weight)
                  
                 pred = evaluate(test_data, weight)
                 targets = np.array(test_data[:, 1], dtype=float)
                 error = mse(targets,pred)
-            	eval_mse.append(error)
+                eval_mse.append(error)
             
             beta_optimal = beta_values[np.argmin(eval_mse)]
             
             PSSM_matrices_optimal = PSSM_matrices[np.argmin(eval_mse)]
-            
-            evaluation_PSSM[inner_index] = np.array(evaluate(evaluation_data, PSSM_matrices_optimal)).reshape(-1,1)
-    
+
+
+            evaluation_PSSM[inner_index-1] = np.array(evaluate(evaluation_data, PSSM_matrices_optimal)).reshape(-1,1)
+
         prediction_PSSM[outer_index] = np.mean(np.concatenate(evaluation_PSSM, axis = 1), axis = 1)
-    
+        print(evaluation_PSSM)
     predictions_PSSM = np.concatenate(prediction_PSSM, axis = 0).reshape(-1,1)
     
     PSSM_errors.append(mse(whole_dataset[:,1].astype(float), predictions_PSSM[:,0]))
