@@ -90,9 +90,9 @@ def gradient_descent(y_pred, y_target, peptide, weights, lamb_N, epsilon):
 	weights[i] -= epsilon * de_dw_i
 
 
-def SMM_train(training_file, test_file, lamb):
-	training_data = np.loadtxt(training_file,dtype=str)
-	test_data = np.loadtxt(test_file, dtype=str)
+def train(training_data, test_data, lamb):
+#	training_data = np.loadtxt(training_file,dtype=str)
+#	test_data = np.loadtxt(test_file, dtype=str)
 
 	peptides = training_data[:,0]
 	peptides = encode(peptides, blosum62, alphabet)
@@ -144,4 +144,11 @@ def SMM_train(training_file, test_file, lamb):
 		test_mse = cal_mse(test_peptides,test_pred)
 		test_pcc = pearsonr(test_targets, test_pred)
 
-	return lamb, test_mse, test_pcc, weights, test_pred
+	return lamb, test_mse, weights
+
+def evaluate(evaluation_data, weight)
+	peptides = evaluation_data[:,0]
+	peptides = encode(peptides, blosum62, alphabet)
+	prediction = predict(peptides,weight)
+
+	return prediction
