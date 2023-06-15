@@ -1,39 +1,36 @@
 import numpy as np
+from scipy.stats import pearsonr
 
 
 #######################
 alphabet = np.loadtxt('../Matrices/alphabet',dtype=str)
-_blosum62 = np.loadtxt('../Matrices/BLOSUM62', dtype=float).reshape((20,20)).T
+_blosum62 = np.loadtxt('../Matrices/blosum62.freq_rownorm', dtype=float).reshape((20,20)).T
 
 blosum62 = {}
 for i, letter_1 in enumerate(alphabet):
 	blosum62[letter_1] = {}
 	for j, letter_2 in enumerate(alphabet):
 		blosum62[letter_1][letter_2] = _blosum62[i,j]
-
-np.random.seed(1)
-
 #######################
 
 def encode(peptides, encoding_scheme, alphabet):
-    
-    encoded_peptides = []
 
-    for peptide in peptides:
+	encoded_peptides = []
 
-        encoded_peptide = []
+	for peptide in peptides:
 
-        for peptide_letter in peptide:
+		encoded_peptide = []
 
-            for alphabet_letter in alphabet:
+		for peptide_letter in peptide:
 
-                encoded_peptide.append(encoding_scheme[peptide_letter][alphabet_letter])
+			for alphabet_letter in alphabet:
+				encoded_peptide.append(encoding_scheme[peptide_letter][alphabet_letter])
 
-        encoded_peptides.append(encoded_peptide)
+		encoded_peptides.append(encoded_peptide)
         
 	return np.array(encoded_peptides)
 
-def cummulative_error(peptides, y, lamb, weight):
+def cummulative_error(peptides, y, lamb, weights):
 
 	error = 0
 
@@ -45,6 +42,7 @@ def cummulative_error(peptides, y, lamb, weight):
 
 		y_pred = np.dot(peptide, weights)
 
+
 		error += 1.0/2 * (y_pred - y_target)**2
 
 	gerror = error + lamb*np.dot(weights, weights)
@@ -52,7 +50,7 @@ def cummulative_error(peptides, y, lamb, weight):
 	return gerror, error
 
 
-def predict(peptides, weights)
+def predict(peptides, weights):
 	
 	pred = []
 
@@ -68,25 +66,23 @@ def predict(peptides, weights)
 
 def cal_mse(vec1, vec2):
 
-	cal_mse = 0
-
-	if len(vec1) != len(vec2):
-		raise Exception('cal_mse function in SMM failed, check code')
+	mse = 0
 
 	for i in range(0,len(vec1)):
-		mse += (ven1[i] - vec2[2])**2
+		mse += (vec1[i] - vec2[i])**2
 
 	mse /= len(vec1)
 
-	return(mse)
+	return mse
 
 def gradient_descent(y_pred, y_target, peptide, weights, lamb_N, epsilon):
 
 	do = y_pred - y_target
 
-	for i in range(0,weights):
+	for i in range(0,len(peptide)):
 		de_dw_i = do*peptide[i] + (2*lamb_N)*weights[i]
 
+	#print(de_dw_i)
 	weights[i] -= epsilon * de_dw_i
 
 
@@ -103,7 +99,7 @@ def train(training_data, test_data, lamb):
 
 	# test peptide
 	test_peptides = test_data[:,0]
-	test_peptides = encode(peptides, blosum62, alphabet)
+	test_peptides = encode(test_peptides, blosum62, alphabet)
 
 	# test targets
 	test_targets = np.array(test_data[:,1],dtype=float)
@@ -141,12 +137,13 @@ def train(training_data, test_data, lamb):
 
 		# predict on test data
 		test_pred = predict(test_peptides, weights)
-		test_mse = cal_mse(test_peptides,test_pred)
+		test_mse = cal_mse(test_targets,test_pred)
+#		print(np.min(test_pred), np.mean(test_pred), np.max(test_pred))
 		test_pcc = pearsonr(test_targets, test_pred)
 
 	return lamb, test_mse, weights
 
-def evaluate(evaluation_data, weight)
+def evaluate(evaluation_data, weight):
 	peptides = evaluation_data[:,0]
 	peptides = encode(peptides, blosum62, alphabet)
 	prediction = predict(peptides,weight)
