@@ -79,7 +79,7 @@ for mhc in mhc_list:
 
 
     prediction_PSSM = [None, None, None, None, None]
-    evaluation_PSSM = [None, None, None, None]
+
 
     for outer_index in range(5) :
 
@@ -90,6 +90,10 @@ for mhc in mhc_list:
         PSSM_matrices = []
         inner_indexes = [i for i in range(5)]
         inner_indexes.remove(outer_index)
+        
+        evaluation_PSSM = []
+        
+
 
         for inner_index in inner_indexes :
             
@@ -119,19 +123,20 @@ for mhc in mhc_list:
             
             PSSM_matrices_optimal = PSSM_matrices[np.argmin(eval_mse)]
 
-
-            evaluation_PSSM[inner_index-1] = np.array(evaluate(evaluation_data, PSSM_matrices_optimal)).reshape(-1,1)
+            evaluation_PSSM.append(np.array(evaluate(evaluation_data, PSSM_matrices_optimal)).reshape(-1,1))
 
         prediction_PSSM[outer_index] = np.mean(np.concatenate(evaluation_PSSM, axis = 1), axis = 1)
-        print(evaluation_PSSM)
+        
     predictions_PSSM = np.concatenate(prediction_PSSM, axis = 0).reshape(-1,1)
-    
+    print(min(predictions_PSSM))
     PSSM_errors.append(mse(whole_dataset[:,1].astype(float), predictions_PSSM[:,0]))
            
        
-    with open("./results_PSSM.txt","a") as f :
-        f.write(mhc+"\t"+str(number_of_binders[-1])+str(PSSM_errors[-1]))
+#    with open("./results_PSSM.txt","a") as f :
+ #       f.write(mhc+"\t"+str(number_of_binders[-1])+str(PSSM_errors[-1]))
 
     print("\t{} completed in {}s".format(mhc, time.time()-mhc_start))
 
     print("\n--------------------------\n")
+    
+print(PSSM_errors)
