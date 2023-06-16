@@ -245,8 +245,6 @@ def train():
 # %%
 EPOCHS = 3000
 MINI_BATCH_SIZE = 512
-N_HIDDEN_NEURONS = 6
-LEARNING_RATE = 0.05
 PATIENCE = EPOCHS // 10    
         
 net = Net(n_features, N_HIDDEN_NEURONS)
