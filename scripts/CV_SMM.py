@@ -27,7 +27,15 @@ for i, letter_1 in enumerate(alphabet):
         blosum62[letter_1][letter_2] = _blosum62[i,j]
 
 def mse(y_target_array, y_pred_array):
-    return np.sqrt(((y_target_array - y_pred_array)**2).mean())
+
+    mse = 0
+
+    for i in range(0,len(y_target_array)):
+        mse += 1/2*(y_target_array[i] - y_pred_array[i])**2
+
+    mse /= len(y_target_array)
+
+    return mse
 
 with open("./results.txt","a") as f :
      f.write("MHC\tN_binders\tPSSM_error\tSMM_error\tANN_error\n")
@@ -36,15 +44,19 @@ mhc_dir = "../data/"
 mhc_list = os.listdir(mhc_dir)
 binder_threshold = 1-math.log(500)/math.log(50000)
 
+test = []
 number_of_binders = []
+pred_binder_number = []
 PSSM_errors = []
 SMM_errors = []
 ANN_errors = []
 
 
+
 for i in range(1):
 #for mhc in mhc_list:
     mhc = mhc_list[i]
+    print(mhc)
     mhc_start = time.time()
 
     print("Started ", mhc)
@@ -59,6 +71,7 @@ for i in range(1):
         dataset[i][:,2] = dataset[i][:,1].astype(float) > binder_threshold
   
     whole_dataset = np.concatenate(dataset, axis = 0)
+    number_of_binders.append(np.count_nonzero(whole_dataset[:][:,2] == 'True'))
 
 
     prediction_SMM = [None, None, None, None, None]
@@ -66,17 +79,16 @@ for i in range(1):
 
     for outer_index in range(5) :
 
-        print("\tOuter index: {}/5".format(outer_index+1))
+#        print("\tOuter index: {}/5".format(outer_index+1))
 
         evaluation_data = dataset[outer_index]
 
-        SMM_matrices = []
+
         evaluation_SMM = []
         inner_indexes = [i for i in range(5)]
         inner_indexes.remove(outer_index)
 
         for inner_index in inner_indexes :
-            print(inner_index)
 
             test_data = dataset[inner_index]
 
@@ -87,15 +99,16 @@ for i in range(1):
             train_data = np.concatenate(train_data, axis = 0)
 
             test_mse_list = []
+            SMM_matrices = []
             lamda_optimal = 0 
 
 
             
             for number in range(len(lambda_values)):
             
-                print("\t\t\tTraining SMM ...")
-                lamb, test_mse, weights = SMM.train(train_data, test_data, lambda_values[number])
-               # print(test_mse)
+                print("\t\t\tOuter index: {}/5, inner index: {}, Training SMM ... {}/{}".format(outer_index+1, inner_index, number, len(lambda_values)))
+                lamb, test_mse, weights, test_pred= SMM.train(train_data, test_data, lambda_values[number])
+#                print(min(test_pred),np.mean(test_pred),max(test_pred))
                 test_mse_list.append(test_mse)
                 SMM_matrices.append(weights)
 
@@ -104,19 +117,27 @@ for i in range(1):
 
             SMM_matrices_optimal = SMM_matrices[np.argmin(test_mse_list)]
             
+            test.append('lambdavalue: {}, mse: {}'.format(lamda_optimal, min(test_mse_list)))
             evaluation_SMM.append(np.array(SMM.evaluate(evaluation_data, SMM_matrices_optimal)).reshape(-1,1))
-            print(evaluation_SMM)
+            #print(evaluation_SMM)
 
         prediction_SMM[outer_index] = np.mean(np.concatenate(evaluation_SMM, axis = 1), axis = 1)
+        #prediction_SMM[outer_index] = np.mean(np.row_stack(evaluation_SMM), axis = 0)
+#        print(prediction_SMM)
 
     
     predictions_SMM = np.concatenate(prediction_SMM, axis = 0).reshape(-1,1)
     
     SMM_errors.append(mse(whole_dataset[:,1].astype(float), predictions_SMM[:,0]))
-           
-       
+
+    pred_binder_number.append((predictions_SMM > binder_threshold).sum())
+
+    eval_pcc = pearsonr(whole_dataset[:,1].astype(float), predictions_SMM[:,0].astype(float))
+    print(eval_pcc)
+
     with open("./results_SMM.txt","a") as f :
-        f.write(mhc+"\t"+str(number_of_binders[-1])+str(SMM_errors[-1]))
+        f.write(mhc+"\t"+ str(len(whole_dataset)) + '\t' + str(number_of_binders[-1]) + '\t' + str(pred_binder_number[-1]) + '\t' + str(SMM_errors[-1]) + '\t' + str(eval_pcc[0]) + '\t' + str(eval_pcc[1]) + '\n')
+
 
     print("\t{} completed in {}s".format(mhc, time.time()-mhc_start))
 
