@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import os
 import time
 import math
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import roc_curve, auc, roc_auc_score
 
 #import ANN
 import PSSM_new
@@ -74,12 +76,17 @@ for mhc in mhc_list:
         dataset.append(np.loadtxt(filename, dtype = str))
         np.random.shuffle(dataset[i])
         dataset[i][:,2] = dataset[i][:,1].astype(float) > binder_threshold
+        
+        #dataset[i][:,2].astype(int)
   
     whole_dataset = np.concatenate(dataset, axis = 0)
-
+    
+    target_int = (whole_dataset[:,2]  == "True").astype(int)
+    #whole_dataset[:,2].astype(int)
+    print(target_int)
 
     prediction_PSSM = [None, None, None, None, None]
-
+    prediction_PSSM_TF = [None, None, None, None, None]
 
     for outer_index in range(5) :
 
@@ -126,17 +133,38 @@ for mhc in mhc_list:
             evaluation_PSSM.append(np.array(evaluate(evaluation_data, PSSM_matrices_optimal)).reshape(-1,1))
 
         prediction_PSSM[outer_index] = np.mean(np.concatenate(evaluation_PSSM, axis = 1), axis = 1)
+        prediction_PSSM_TF[outer_index] = prediction_PSSM[outer_index] >0.426
         
     predictions_PSSM = np.concatenate(prediction_PSSM, axis = 0).reshape(-1,1)
-    print(min(predictions_PSSM))
+    predictions_PSSM_TF = np.concatenate(prediction_PSSM_TF, axis = 0).reshape(-1,1).astype(int)
+    
+   
     PSSM_errors.append(mse(whole_dataset[:,1].astype(float), predictions_PSSM[:,0]))
-           
-       
+    
+    n_datapoint = np.count_nonzero(whole_dataset[:,2])
+    print(n_datapoint)
+    
+    n_binder = np.count_nonzero(whole_dataset[:,2] == "True")
+    print(n_binder)
+    
+    eval_pcc = pearsonr(whole_dataset[:,1].astype(float), predictions_PSSM[:,0].astype(float))[0]
+    print(eval_pcc)
+    
+    acc = accuracy_score(target_int, predictions_PSSM_TF)
+    print(acc)
+    
+    auc = roc_auc_score(target_int, predictions_PSSM_TF)
+    print(auc)
+    
+    with open("./PSSM_results.txt","a") as f :
+        f.write(mhc+"\t"+str(n_datapoint)+"\t"+str(n_binder)+"\t"+str(eval_pcc)+"\t"+str(acc)+"\t"+str(auc)+"\n")
+
 #    with open("./results_PSSM.txt","a") as f :
  #       f.write(mhc+"\t"+str(number_of_binders[-1])+str(PSSM_errors[-1]))
-
-    print("\t{} completed in {}s".format(mhc, time.time()-mhc_start))
+ 
+    print("\t{} completed in {}m".format(mhc, time.time()-mhc_start))
 
     print("\n--------------------------\n")
+    
     
 print(PSSM_errors)
