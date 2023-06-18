@@ -156,7 +156,7 @@ for mhc in mhc_list:
     auc = roc_auc_score(target_int, predictions_PSSM_TF)
     print(auc)
     
-    with open("./PSSM_results.txt","a") as f :
+    with open("../PSSM_results.txt","a") as f :
         f.write(mhc+"\t"+str(n_datapoint)+"\t"+str(n_binder)+"\t"+str(eval_pcc)+"\t"+str(acc)+"\t"+str(auc)+"\n")
 
 #    with open("./results_PSSM.txt","a") as f :
