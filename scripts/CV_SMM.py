@@ -56,8 +56,9 @@ ANN_errors = []
 for i in range(1):
 #for mhc in mhc_list:
     mhc = mhc_list[i]
-    print(mhc)
+    print(mhc_list)
     mhc_start = time.time()
+    exit()
 
     print("Started ", mhc)
     dataset = []
